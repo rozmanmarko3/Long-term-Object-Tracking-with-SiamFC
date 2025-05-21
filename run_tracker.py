@@ -38,6 +38,7 @@ def evaluate_tracker(dataset_path, network_path, results_dir, visualize):
         if visualize:
             cv2.namedWindow('win', cv2.WINDOW_AUTOSIZE)
         for i in range(1, sequence.length()):
+            print(f'Processing frame {i}/{sequence.length() - 1}')
 
             img = cv2.imread(sequence.frame(i))
             prediction, score = tracker.update(img)

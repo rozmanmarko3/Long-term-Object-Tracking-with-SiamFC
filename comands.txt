@@ -1,0 +1,3 @@
+python run_tracker.py --dataset 'C:\Faks\NMRV\Project5\dataset' --net 'C:\Faks\NMRV\Project5\siamfc_net.pth' --results_dir 'C:\Faks\NMRV\Project5\results'
+
+python performance_evaluation.py --dataset 'C:\Faks\NMRV\Project5\dataset' --results_dir 'C:\Faks\NMRV\Project5\results'
