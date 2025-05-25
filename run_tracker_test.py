@@ -1,14 +1,11 @@
-import argparse
 import os
 import cv2
 
 from tools.sequence_utils import VOTSequence
-from tools.sequence_utils import save_results
-from siamfc_lt import TrackerSiamFC
-from performance_evaluation import evaluate_performance
 
 def evaluate_tracker(dataset_path, tracker):
-    visualize = True
+    parameter = tracker.start_tracking_treshold
+    visualize = False
     sequences = []
     with open(os.path.join(dataset_path, 'list.txt'), 'r') as f:
         for line in f.readlines():
@@ -33,7 +30,7 @@ def evaluate_tracker(dataset_path, tracker):
         if visualize:
             cv2.namedWindow('win', cv2.WINDOW_AUTOSIZE)
         for i in range(1 + initFrame, sequence.length()):
-            print(f'Processing frame {i}/{sequence.length() - 1}')
+            print(f'Processing frame {i}/{sequence.length() - 1}, treshold: {parameter}')
 
             img = cv2.imread(sequence.frame(i))
             prediction, score = tracker.update(img)

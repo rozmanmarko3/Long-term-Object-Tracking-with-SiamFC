@@ -62,14 +62,14 @@ def calculate_pr_re_f(sequences, overlaps, scores, thresholds):
 
     return pr_score, re_score, f_score
 
-def evaluate_performance(dataset_path, results_dir,bboxes_all=None, scores_all=None):
+def evaluate_performance(dataset_path, bboxes_all=None, scores_all=None):
     
     sequences = []
     with open(os.path.join(dataset_path, 'list.txt'), 'r') as f:
         for line in f.readlines():
             sequences.append(line.strip())
 
-    scores_all = []
+    scores_result = []
     overlaps_all = []
 
     dataset = []
@@ -78,15 +78,8 @@ def evaluate_performance(dataset_path, results_dir,bboxes_all=None, scores_all=N
         sequence = VOTSequence(dataset_path, sequence_name)
         dataset.append(sequence)
 
-        if bboxes_all is None or scores_all is None:
-            bboxes_path = os.path.join(results_dir, '%s_bboxes.txt' % sequence_name)
-            scores_path = os.path.join(results_dir, '%s_scores.txt' % sequence_name)
-
-            bboxes = read_results(bboxes_path)
-            scores = read_results(scores_path)
-        else:
-            bboxes = bboxes_all[sequence_name]
-            scores = scores_all[sequence_name]
+        bboxes = bboxes_all[sequence_name]
+        scores = scores_all[sequence_name]
 
         if len(sequence.gt) != len(bboxes):
             print('Groundtruth and results does not have the same number of elements.')
@@ -94,12 +87,12 @@ def evaluate_performance(dataset_path, results_dir,bboxes_all=None, scores_all=N
 
         overlaps = [sequence.overlap(bb, gt) for bb, gt in zip(bboxes, sequence.gt)]
         
-        scores_all.append(scores)
+        scores_result.append(scores)
         overlaps_all.append(overlaps)
 
-    thresholds = estimate_thresholds(scores_all, 100)
+    thresholds = estimate_thresholds(scores_result, 100)
 
-    pr, re, f = calculate_pr_re_f(dataset, overlaps_all, scores_all, thresholds)
+    pr, re, f = calculate_pr_re_f(dataset, overlaps_all, scores_result, thresholds)
     
     return pr, re, f
 
