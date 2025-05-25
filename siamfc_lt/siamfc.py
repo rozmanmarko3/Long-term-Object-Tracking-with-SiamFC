@@ -75,6 +75,13 @@ class TrackerSiamFC(Tracker):
             self.cfg.ultimate_lr / self.cfg.initial_lr,
             1.0 / self.cfg.epoch_num)
         self.lr_scheduler = ExponentialLR(self.optimizer, gamma)
+        
+        #tracking or searching
+        self.tracking = True
+        self.box = None
+        self.max_resp = 10000
+        self.start_tracking_treshold = 3.0
+        self.search_n = 10  # number of random points to search from
 
     def parse_args(self, **kwargs):
         # default parameters
@@ -150,17 +157,80 @@ class TrackerSiamFC(Tracker):
         z = torch.from_numpy(z).to(
             self.device).permute(2, 0, 1).unsqueeze(0).float()
         self.kernel = self.net.backbone(z)
-    
+        
+    def update(self,img):
+        
+            new_center = self.center
+            new_target_sz = self.target_sz
+            new_z_sz = self.z_sz
+            new_x_sz = self.x_sz
+            new_box = self.box
+            new_max_resp = self.max_resp
+            
+            stop_tracking_treshold = self.start_tracking_treshold + 0.5
+            
+            #start searching if max_resp is less than 3
+            if new_max_resp < self.start_tracking_treshold:
+                self.tracking = False
+        
+            if self.tracking:
+                #call old detect function normaly
+                box, max_resp, proposed_center, proposed_target_sz, proposed_z_sz, proposed_x_sz = self.detect(img, self.scale_factors, self.center)
+                new_center = proposed_center
+                new_target_sz = proposed_target_sz
+                new_z_sz = proposed_z_sz
+                new_x_sz = proposed_x_sz
+                new_box = box
+                new_max_resp = max_resp
+            else:
+                #sample n random points and call detect function
+                rand_x = np.random.randint(0, img.shape[1], size=self.search_n)
+                rand_y = np.random.randint(0, img.shape[0], size=self.search_n)
+                
+                # #draw points on image
+                # for i in range(n):
+                #     cv2.circle(img, (rand_x[i], rand_y[i]), 2, (0, 255, 0), -1)
+                
+                
+                for i in range(self.search_n):
+                    random_center = np.array([rand_x[i], rand_y[i]])
+                    scale_factors_for_search = [1]
+                    box, max_resp, proposed_center, proposed_target_sz, proposed_z_sz, proposed_x_sz = self.detect(img, scale_factors_for_search, random_center)
+                    
+                    if max_resp > new_max_resp:
+                        new_center = proposed_center
+                        new_target_sz = proposed_target_sz
+                        new_z_sz = proposed_z_sz
+                        new_x_sz = proposed_x_sz
+                        new_box = box
+                        new_max_resp = max_resp
+                
+                  
+                    
+            
+            
+            #update object values, we fount it
+            if new_max_resp > stop_tracking_treshold:
+                self.tracking = True
+                self.center = new_center
+                self.target_sz = new_target_sz
+                self.z_sz = new_z_sz
+                self.x_sz = new_x_sz
+                self.box = new_box
+            self.max_resp = new_max_resp
+            
+            return self.box, self.max_resp
+
     @torch.no_grad()
-    def update(self, img):
+    def detect(self, img, scale_factors, center):
         # set to evaluation mode
         self.net.eval()
 
         # search images
         x = [ops.crop_and_resize(
-            img, self.center, self.x_sz * f,
+            img, center, self.x_sz * f,
             out_size=self.cfg.instance_sz,
-            border_value=self.avg_color) for f in self.scale_factors]
+            border_value=self.avg_color) for f in scale_factors]
         x = np.stack(x, axis=0)
         x = torch.from_numpy(x).to(
             self.device).permute(0, 3, 1, 2).float()
@@ -196,22 +266,22 @@ class TrackerSiamFC(Tracker):
             self.cfg.total_stride / self.cfg.response_up
         disp_in_image = disp_in_instance * self.x_sz * \
             self.scale_factors[scale_id] / self.cfg.instance_sz
-        self.center += disp_in_image
+        proposed_center = center + disp_in_image
 
-        # update target size
+        # calculate target size
         scale =  (1 - self.cfg.scale_lr) * 1.0 + \
             self.cfg.scale_lr * self.scale_factors[scale_id]
-        self.target_sz *= scale
-        self.z_sz *= scale
-        self.x_sz *= scale
+        proposed_target_sz = self.target_sz * scale
+        proposed_z_sz = self.z_sz * scale
+        proposed_x_sz = self.x_sz * scale
 
         # return 1-indexed and left-top based bounding box
         box = np.array([
-            self.center[1] + 1 - (self.target_sz[1] - 1) / 2,
-            self.center[0] + 1 - (self.target_sz[0] - 1) / 2,
-            self.target_sz[1], self.target_sz[0]])
+            proposed_center[1] + 1 - (proposed_target_sz[1] - 1) / 2,
+            proposed_center[0] + 1 - (proposed_target_sz[0] - 1) / 2,
+            proposed_target_sz[1], proposed_target_sz[0]])
 
-        return box, max_resp
+        return box, max_resp, proposed_center, proposed_target_sz, proposed_z_sz, proposed_x_sz
     
     def train_step(self, batch, backward=True):
         # set network mode

@@ -1,3 +1,7 @@
 dataset/*
 !dataset/list.txt
 */__pycache__/*
+__pycache__/performance_evaluation.cpython-312.pyc
+__pycache__/run_tracker_test.cpython-312.pyc
+report/*
+!report/main.tex

@@ -1,0 +1,95 @@
+\documentclass[9pt]{IEEEtran}
+
+\usepackage[english]{babel}
+\usepackage{graphicx}
+\usepackage{epstopdf}
+\usepackage{fancyhdr}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{amssymb}
+\usepackage{url}
+\usepackage{array}
+\usepackage{textcomp}
+\usepackage{listings}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{colortbl}
+\usepackage{float}
+\usepackage{gensymb}
+\usepackage{longtable}
+\usepackage{supertabular}
+\usepackage{multicol}
+
+\usepackage[utf8x]{inputenc}
+
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\input{glyphtounicode}
+\pdfgentounicode=1
+
+\graphicspath{{./figures/}}
+\DeclareGraphicsExtensions{.pdf,.png,.jpg,.eps}
+
+% correct bad hyphenation here
+\hyphenation{op-tical net-works semi-conduc-tor trig-gs}
+
+% ============================================================================================
+
+\title{\vspace{0ex}Long-Term Tracking}
+
+\author{Marko Rozman\vspace{-4.0ex}}
+
+% ============================================================================================
+
+\begin{document}
+
+\maketitle
+
+\section{Introduction}
+
+
+\section{Task 1}
+My PC does not have a GPU, so I'll be working on fewer number of sequences. I downloaded the required files and ran the SiamFC tracker on the sequence car9. The tracker was able to track the car until it passed under the sign. Then the tracker lost the car and was unable to recover. I got the following results \ref{tab:results_1}
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|c|c|c|c|}
+    \hline
+    Precision & Recall & F-score \\
+    \hline
+    0.63 & 0.27 & 0.38 \\
+    \hline
+    \end{tabular}
+    \vspace{0.5em}
+    \caption{Tracker performance}
+    \label{tab:results_1}
+    \end{table}
+
+
+
+\section{Task 2}
+I split the update function into two functions one to detect and one to update. The update function decides if it should work as a tracker or if the object is lost and it should switch to search. The search mode searches in random points on the image, using a bounding box the same size as last tracked frame. This makes the assumption that the tracked object will not change size while it's hidden. This is not a good assumption. While the tracker is searching it's returning the last known position. To set the treshold I looked at the max responses of the tracker on the car9 sequence and decided to set the start search treshold at 4 and the treshold for successful detection at 4,5.  The tracker was able to redetect the car after it passed under the sign and continiued to track it till the end. \ref{tab:results_2}
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|c|c|c|c|}
+    \hline
+    Precision & Recall & F-score \\
+    \hline
+    0.60 & 0.59 & 0.59 \\
+    \hline
+    \end{tabular}
+    \vspace{0.5em}
+    \caption{Tracker performance}
+    \label{tab:results_2}
+    \end{table}  
+
+\section{Task 3}
+I defined the confidence score as the maximum response of the tracker. To find the best treshold I would run the tracker with diffrent tresholds on the whole dataset and look for best F1 score. Since I don't have a GPU I ran the tracker only on sequnces car9, skiing and cat1.
+
+\section{Conclusion}
+
+
+\bibliographystyle{IEEEtran}
+\bibliography{bibliography}
+
+\end{document}

@@ -62,7 +62,7 @@ def calculate_pr_re_f(sequences, overlaps, scores, thresholds):
 
     return pr_score, re_score, f_score
 
-def evaluate_performance(dataset_path, results_dir):
+def evaluate_performance(dataset_path, results_dir,bboxes_all=None, scores_all=None):
     
     sequences = []
     with open(os.path.join(dataset_path, 'list.txt'), 'r') as f:
@@ -78,11 +78,15 @@ def evaluate_performance(dataset_path, results_dir):
         sequence = VOTSequence(dataset_path, sequence_name)
         dataset.append(sequence)
 
-        bboxes_path = os.path.join(results_dir, '%s_bboxes.txt' % sequence_name)
-        scores_path = os.path.join(results_dir, '%s_scores.txt' % sequence_name)
+        if bboxes_all is None or scores_all is None:
+            bboxes_path = os.path.join(results_dir, '%s_bboxes.txt' % sequence_name)
+            scores_path = os.path.join(results_dir, '%s_scores.txt' % sequence_name)
 
-        bboxes = read_results(bboxes_path)
-        scores = read_results(scores_path)
+            bboxes = read_results(bboxes_path)
+            scores = read_results(scores_path)
+        else:
+            bboxes = bboxes_all[sequence_name]
+            scores = scores_all[sequence_name]
 
         if len(sequence.gt) != len(bboxes):
             print('Groundtruth and results does not have the same number of elements.')
@@ -96,19 +100,7 @@ def evaluate_performance(dataset_path, results_dir):
     thresholds = estimate_thresholds(scores_all, 100)
 
     pr, re, f = calculate_pr_re_f(dataset, overlaps_all, scores_all, thresholds)
-
-    print('--------------------------')
-    print('Precision:', pr)
-    print('Recall:', re)
-    print('F-score:', f)
-    print('--------------------------')
+    
+    return pr, re, f
 
 
-parser = argparse.ArgumentParser(description='Longe-term Tracking Performance Evaluation Script')
-
-parser.add_argument("--dataset", help="Path to the dataset", required=True, action='store')
-parser.add_argument("--results_dir", help="Path to the directory to store the results", required=True, action='store')
-
-args = parser.parse_args()
-
-evaluate_performance(args.dataset, args.results_dir)
