@@ -3,9 +3,8 @@ import cv2
 
 from tools.sequence_utils import VOTSequence
 
-def evaluate_tracker(dataset_path, tracker):
-    parameter = tracker.start_tracking_treshold
-    visualize = False
+def evaluate_tracker(dataset_path, tracker, visualize = False,initFrame = 0):
+    
     sequences = []
     with open(os.path.join(dataset_path, 'list.txt'), 'r') as f:
         for line in f.readlines():
@@ -20,7 +19,7 @@ def evaluate_tracker(dataset_path, tracker):
 
         
         sequence = VOTSequence(dataset_path, sequence_name)
-        initFrame = 0
+        
         img = cv2.imread(sequence.frame(initFrame))
         gt_rect = sequence.get_annotation(initFrame)
         tracker.init(img, gt_rect)
@@ -30,10 +29,10 @@ def evaluate_tracker(dataset_path, tracker):
         if visualize:
             cv2.namedWindow('win', cv2.WINDOW_AUTOSIZE)
         for i in range(1 + initFrame, sequence.length()):
-            print(f'Processing frame {i}/{sequence.length() - 1}, treshold: {parameter}')
+            print(f'Processing frame {i}/{sequence.length() - 1}')
 
             img = cv2.imread(sequence.frame(i))
-            prediction, score = tracker.update(img)
+            prediction, score = tracker.update(img,i)
             results.append(prediction)
             scores.append([score])
 
@@ -43,7 +42,7 @@ def evaluate_tracker(dataset_path, tracker):
                 cv2.rectangle(img, tl_, br_, (0, 0, 255), 1)
 
                 cv2.imshow('win', img)
-                key_ = cv2.waitKey(10)
+                key_ = cv2.waitKey(1)
                 if key_ == 27:
                     exit(0)
         

@@ -156,6 +156,8 @@ class TrackerSiamFC(Tracker):
         # set to evaluation mode
         self.net.eval()
 
+        shown_image = img.copy()
+        
         # search images
         x = [ops.crop_and_resize(
             img, self.center, self.x_sz * f,
@@ -210,6 +212,16 @@ class TrackerSiamFC(Tracker):
             self.center[1] + 1 - (self.target_sz[1] - 1) / 2,
             self.center[0] + 1 - (self.target_sz[0] - 1) / 2,
             self.target_sz[1], self.target_sz[0]])
+        
+        shown_image = cv2.rectangle(
+            shown_image, 
+            (int(box[0]), int(box[1])),
+            (int(box[0] + box[2] - 1), int(box[1] + box[3] - 1)),
+            (0, 255, 0), 2)
+        
+        cv2.imshow('SiamFC Tracker', shown_image)
+        cv2.waitKey(10000)
+        
 
         return box, max_resp
     

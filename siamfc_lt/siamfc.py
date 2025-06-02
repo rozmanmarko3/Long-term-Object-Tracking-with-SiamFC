@@ -167,11 +167,9 @@ class TrackerSiamFC(Tracker):
             new_box = self.box
             new_max_resp = self.max_resp
             
-            stop_tracking_treshold = self.start_tracking_treshold + 0.5
-            
             #start searching if max_resp is less than 3
             if new_max_resp < self.start_tracking_treshold:
-                self.tracking = False
+                self.tracking = False          
         
             if self.tracking:
                 #call old detect function normaly
@@ -210,7 +208,7 @@ class TrackerSiamFC(Tracker):
             
             
             #update object values, we fount it
-            if new_max_resp > stop_tracking_treshold:
+            if new_max_resp > self.stop_tracking_treshold:
                 self.tracking = True
                 self.center = new_center
                 self.target_sz = new_target_sz
